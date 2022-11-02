@@ -5,8 +5,7 @@ controller:
   service:
     type: ClusterIP
 
-  ingressClassResource:
-    name: dev-nginx-mci
+  ingressClassByName: true
   
 #  image:
     # Harbor에서 가져올 이미지
