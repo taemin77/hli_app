@@ -1,0 +1,24 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: plugin-loki-svc
+  namespace: loki-stack
+  annotations:
+    service.beta.kubernetes.io/ncloud-load-balancer-layer-type: nplb
+    service.beta.kubernetes.io/ncloud-load-balancer-size: "MEDIUM"
+    service.beta.kubernetes.io/ncloud-load-balancer-internal: "true"
+    service.beta.kubernetes.io/ncloud-load-balancer-name: "plugin-loki-svc"
+    service.beta.kubernetes.io/ncloud-load-balancer-termination-protection: "true"
+    service.beta.kubernetes.io/ncloud-load-balancer-ssl-certificate-no: "6225"
+    service.beta.kubernetes.io/ncloud-load-balancer-tls-ports: "3100"
+    service.beta.kubernetes.io/ncloud-load-balancer-tls-min-version: "TLSV12"
+spec:
+  type: LoadBalancer
+  selector:
+    app: loki
+    release: loki-stack
+  ports:
+    - name: https-metrics
+      port: 3100
+      protocol: TCP
+      targetPort: http-metrics

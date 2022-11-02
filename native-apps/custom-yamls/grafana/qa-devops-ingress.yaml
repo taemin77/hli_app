@@ -1,0 +1,14 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: qa-devops-plugin-grafana-ing
+  namespace: qa-grafana
+spec:
+  rules:
+  - host: qaplumon.hanwhalife.com
+    http:
+      paths:
+      - backend:
+          serviceName: qa-grafana
+          servicePort: 80
+        path: /

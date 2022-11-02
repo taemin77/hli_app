@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: dev-devops-plugin-harbor-registry-pvc
+  namespace: dev-harbor
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 1T
+  storageClassName: ""
+  selector:
+    matchLabels:
+      pv: dev-devops-plugin-harbor-registry-pv
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: dev-devops-plugin-harbor-jobservice-pvc
+  namespace: dev-harbor
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 1T
+  storageClassName: ""
+  selector:
+    matchLabels:
+      pv: dev-devops-plugin-harbor-jobservice-pv

@@ -1,0 +1,21 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: plugin-nginx-svc
+  namespace: ingress-nginx
+  annotations:
+    service.beta.kubernetes.io/ncloud-load-balancer-layer-type: nlb
+    service.beta.kubernetes.io/ncloud-load-balancer-internal: "true"
+    service.beta.kubernetes.io/ncloud-load-balancer-name: "plugin-nginx-svc"
+    service.beta.kubernetes.io/ncloud-load-balancer-termination-protection: "true"
+spec:
+  type: LoadBalancer
+  externalTrafficPolicy: Cluster
+  selector:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/instance: ingress-nginx
+    app.kubernetes.io/name: ingress-nginx
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

@@ -1,0 +1,14 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: dev-devops-plugin-grafana-ing
+  namespace: dev-grafana
+spec:
+  rules:
+  - host: devplumon.hanwhalife.com
+    http:
+      paths:
+      - backend:
+          serviceName: dev-grafana
+          servicePort: 80
+        path: /

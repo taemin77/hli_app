@@ -1,0 +1,326 @@
+global:
+  rbac:
+    create: true
+    pspEnabled: true
+
+alertmanager:
+  enabled: false
+
+grafana:
+  enabled: false
+
+kubeProxy:
+  enabled: false
+
+kube-state-metrics:
+  # Harbor에서 가져올 이미지
+  image:
+    repository: qaimgreg.hanwhalife.com/plugin/prometheus/coreos-kube-state-metrics
+    tag: v1.9.7
+  # 자원 할당
+  resources:
+    limits:
+      cpu: 100m
+      memory: 800Mi
+    requests:
+      cpu: 100m
+      memory: 800Mi
+  # Plugin Node에 Pod가 스케줄링 되도록 설정
+  nodeSelector:
+    zone: plugin
+
+prometheus-node-exporter:
+  # Harbor에서 가져올 이미지
+  image:
+    repository: qaimgreg.hanwhalife.com/plugin/prometheus/node-exporter
+    tag: v1.0.1
+  # 자원 할당
+  resources:
+    limits:
+      cpu: 200m
+      memory: 1600Mi
+    requests:
+      cpu: 200m
+      memory: 1600Mi
+
+prometheusOperator:
+  # 로그레벨
+  logLevel: info
+  tlsProxy:
+    enabled: false
+  admissionWebhooks:
+    enabled: false
+  # 자원 할당
+  resources:
+    limits:
+      cpu: 200m
+      memory: 8Gi
+    requests:
+      cpu: 200m
+      memory: 8Gi
+  # Plugin Node에 Pod가 스케줄링 되도록 설정
+  nodeSelector:
+    zone: plugin
+  # Harbor에서 가져올 이미지
+  image:
+    repository: qaimgreg.hanwhalife.com/plugin/prometheus/coreos-prometheus-operator
+    tag: v0.38.1
+  configmapReloadImage:
+    repository: qaimgreg.hanwhalife.com/plugin/prometheus/jimmidyson-configmap-reload
+    tag: v0.3.0
+  prometheusConfigReloaderImage:
+    repository: qaimgreg.hanwhalife.com/plugin/prometheus/coreos-prometheus-config-reloader
+    tag: v0.38.1
+    sha: ""
+
+# Rancher에서 설치한 prometheus 설정을 가져옴
+nodeExporter:
+  serviceMonitor:
+    relabelings:
+    - action: replace
+      regex: (.+)
+      replacement: $1
+      sourceLabels:
+      - __meta_kubernetes_pod_host_ip
+      targetLabel: host_ip
+    - action: replace
+      regex: (.+)
+      replacement: $1
+      sourceLabels:
+      - __meta_kubernetes_pod_node_name
+      targetLabel: node
+
+# Rancher에서 설치한 prometheus 설정을 가져옴
+kubelet:
+  serviceMonitor:
+    cAdvisorMetricRelabelings:
+    - action: labeldrop
+      regex: (^id$|^image$|^name$|^cpu$)
+    - action: replace
+      regex: (.+)
+      replacement: $1
+      sourceLabels:
+      - container
+      targetLabel: container_name
+    - action: replace
+      regex: (.+)
+      replacement: $1
+      sourceLabels:
+      - pod
+      targetLabel: pod_name
+    cAdvisorRelabelings:
+    - action: replace
+      regex: (.+)
+      replacement: $1
+      sourceLabels:
+      - __meta_kubernetes_pod_host_ip
+      targetLabel: host_ip
+    - action: replace
+      regex: (.+)
+      replacement: $1
+      sourceLabels:
+      - __meta_kubernetes_pod_node_name
+      targetLabel: node
+
+prometheus:
+  prometheusSpec:
+  # Harbor에서 가져올 이미지
+    image:
+      repository: qaimgreg.hanwhalife.com/plugin/prometheus/prometheus
+      tag: v2.18.2
+  # 자원 할당
+    resources:
+      limits:
+        cpu: "2"
+        memory: 16Gi
+      requests:
+        cpu: "2"
+        memory: 16Gi
+    # 로그레벨
+    logLevel: info
+    # Plugin Node에 Pod가 스케줄링 되도록 설정
+    nodeSelector:
+      zone: plugin
+    # 최대 보관 주기
+    retention: "60d"
+    # StorageClass 사용하여 BlockStorage 연결
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: qa-plugin-sc
+          resources:
+            requests:
+              storage: 500Gi
+    additionalScrapeConfigs:
+    - job_name: 'prometheus-io-scrape'
+      kubernetes_sd_configs:
+      - role: pod
+        namespaces:
+          names:
+          - ingress-nginx
+          - ingress-controller
+          - kube-system
+      # kubewatcher 쿼리에서 사용하는 label로 변경 (수정시 kubewacther에서 안나오는 화면 생김)
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+        action: keep
+        regex: true
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scheme]
+        action: replace
+        target_label: __scheme__
+        regex: (https?)
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+        action: replace
+        target_label: __metrics_path__
+        regex: (.+)
+      - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+        action: replace
+        target_label: __address__
+        regex: ([^:]+)(?::\d+)?;(\d+)
+        replacement: $1:$2
+      - source_labels: [__meta_kubernetes_pod_node_name]
+        action: replace
+        target_label: node
+        regex: (.+)
+        replacement: $1
+      - source_labels: [__meta_kubernetes_namespace]
+        action: replace
+        target_label: namespace
+        regex: (.+)
+        replacement: $1
+      - source_labels: [__meta_kubernetes_pod_name]
+        action: replace
+        target_label: pod
+        regex: (.+)
+        replacement: $1
+      - source_labels: [__meta_kubernetes_pod_ip]
+        action: replace
+        target_label: pod_ip
+        regex: (.+)
+        replacement: $1
+      - source_labels: [__meta_kubernetes_pod_host_ip]
+        action: replace
+        target_label: host_ip
+        regex: (.+)
+        replacement: $1
+      - source_labels: [__meta_kubernetes_pod_controller_kind]
+        action: replace
+        target_label: created_by_kind
+        regex: (.+)
+        replacement: $1
+      - source_labels: [__meta_kubernetes_pod_controller_name]
+        action: replace
+        target_label: created_by_kind
+        regex: (.+)
+        replacement: $1
+    # kubewatcher 모니터링 타겟 대상으로 필요시 추가
+    - job_name: external-node-metrics
+      scrape_interval: 15s
+      scrape_timeout: 10s
+      metrics_path: /metrics
+      scheme: http
+      static_configs:
+      - targets: [10.253.112.11:9100]
+        labels:
+          zone: 'external'
+#    - job_name: process-metrics
+#      scrape_interval: 15s
+#      scrape_timeout: 10s
+#      metrics_path: /metrics
+#      scheme: http
+#      static_configs:
+#      - targets: [10.253.112.11:9256]
+#        labels:
+#          zone: 'external'
+#      - targets: [10.253.81.9:9256, 10.253.81.10:9256, 10.253.81.11:9256, 10.253.81.12:9256, 10.253.81.13:9256, 10.253.81.14:9256, 10.253.81.15:9256, 10.253.81.16:9256]
+#        labels:
+#          zone: 'cluster'
+    - job_name: oracle-metrics
+      scrape_interval: 39s
+      scrape_timeout: 38s
+      metrics_path: /metrics
+      scheme: http
+      static_configs:
+      - targets: [10.253.112.11:9162]
+        labels:
+          zone: 'external'
+          scrape_type: 'normal'
+    - job_name: 'jmx-metrics'
+      scrape_interval: 10s
+      kubernetes_sd_configs:
+        - role: pod
+          namespaces:
+            names:
+              - qa-core-ns
+              - qa-cust-ns
+              - qa-pica-ns
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_container_port_number]
+        action: keep
+        regex: 9210
+      - source_labels: [__meta_kubernetes_namespace]
+        action: replace
+        target_label: namespace
+        regex: (.+)
+      - source_labels: [__meta_kubernetes_pod_container_name]
+        action: replace
+        target_label: application
+        regex: (.+)
+    - job_name: jmx-metrics-vm
+      scrape_interval: 15s
+      scrape_timeout: 10s
+      metrics_path: /metrics
+      scheme: http
+      static_configs:
+      - targets: [10.253.80.169:19200]
+        labels:
+          application: qa-vmap-acs
+          namespace: qa-vmap-ns
+      - targets: [10.253.80.151:19210]
+        labels:
+          application: qa-vmap-act
+          namespace: qa-vmap-ns
+      - targets: [10.253.80.161:19220]
+        labels:
+          application: qa-vmap-bcm
+          namespace: qa-vmap-ns
+      - targets: [10.253.80.161:19230]
+        labels:
+          application: qa-vmap-bsm
+          namespace: qa-vmap-ns
+      - targets: [10.253.80.206:19240]
+        labels:
+          application: qa-vmap-ind
+          namespace: qa-vmap-ns
+      - targets: [10.253.80.203:19250]
+        labels:
+          application: qa-vmap-ini
+          namespace: qa-vmap-ns
+      - targets: [10.253.80.203:19260]
+        labels:
+          application: qa-vmap-inm
+          namespace: qa-vmap-ns
+      - targets: [10.253.80.161:19270]
+        labels:
+          application: qa-vmap-lsp
+          namespace: qa-vmap-ns
+      - targets: [10.253.80.169:19280]
+        labels:
+          application: qa-vmap-mgm
+          namespace: qa-vmap-ns
+      - targets: [10.253.80.161:19290]
+        labels:
+          application: qa-vmap-mkt
+          namespace: qa-vmap-ns
+      - targets: [10.253.80.166:19300]
+        labels:
+          application: qa-vmap-mnm
+          namespace: qa-vmap-ns
+      - targets: [10.253.80.169:19310]
+        labels:
+          application: qa-vmap-mrm
+          namespace: qa-vmap-ns
+      - targets: [10.253.80.161:19320]
+        labels:
+          application: qa-vmap-rsc
+          namespace: qa-vmap-ns

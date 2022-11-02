@@ -1,0 +1,25 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: qa-devops-plugin-harbor-svc
+  namespace: qa-harbor
+  annotations:
+    service.beta.kubernetes.io/ncloud-load-balancer-layer-type: nplb
+    service.beta.kubernetes.io/ncloud-load-balancer-size: "SMALL"
+    service.beta.kubernetes.io/ncloud-load-balancer-internal: "true"
+    service.beta.kubernetes.io/ncloud-load-balancer-name: "qa-devops-plugin-harbor-svc"
+    service.beta.kubernetes.io/ncloud-load-balancer-termination-protection: "true"
+    service.beta.kubernetes.io/ncloud-load-balancer-ssl-certificate-no: "6225"
+    service.beta.kubernetes.io/ncloud-load-balancer-tls-ports: "443"
+    service.beta.kubernetes.io/ncloud-load-balancer-tls-min-version: "TLSV12"
+spec:
+  type: LoadBalancer
+  selector:
+    app: harbor
+    component: core
+    release: qa-harbor
+  ports:
+  - name: web
+    port: 443
+    protocol: TCP
+    targetPort: 8080

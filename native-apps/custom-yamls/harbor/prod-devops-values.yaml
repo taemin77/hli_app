@@ -1,0 +1,133 @@
+# Ingress 설정
+expose:
+  type: ingress
+  tls:
+    enabled: false
+    certSource: none
+  ingress:
+    hosts:
+      core: imgpor.hanwhalife.com
+
+# Harbor Core Service를 위한 외부 URL 주소 세팅
+externalURL: https://imgreg.hanwhalife.com
+
+# 저장소 설정
+persistence:
+  enabled: true
+  persistentVolumeClaim:
+    # Docker Regstiry NAS 연결 PVC 설정
+    registry:
+      existingClaim: "devops-plugin-harbor-registry-pvc"
+    # Postgre Blockstorage 연결을 위한 StorageClass 세팅
+    database:
+      storageClass: "devops-plugin-sc"
+      size: 100G
+    # Redis Blockstorage 연결을 위한 StorageClass 세팅
+    redis:
+      storageClass: "devops-plugin-sc"
+      size: 100G
+    jobservice:
+      existingClaim: "devops-plugin-harbor-jobservice-pvc"
+
+# 로그 레벨
+logLevel: info
+
+# Harbor Dashboard 접속을 위한 admin Pass 설정
+harborAdminPassword: "hlico123#"
+
+
+# Dashbaord 자원 할당
+portal:
+  resources:
+   limits:
+     memory: 4Gi
+     cpu: 0.5
+   requests:
+     memory: 4Gi
+     cpu: 0.5
+
+# Core 이중화 설정 및  자원 할당
+core:
+  replicas: 2
+  resources:
+   limits:
+     memory: 8Gi
+     cpu: 1
+   requests:
+     memory: 8Gi
+     cpu: 1
+
+# JobService 이중화 설정 및  자원 할당
+jobservice:
+  replicas: 2
+  resources:
+   limits:
+     memory: 4Gi
+     cpu: 0.5
+   requests:
+     memory: 4Gi
+     cpu: 0.5
+  # The logger for jobs: "file", "database" or "stdout"
+  jobLogger:
+    - file
+
+# Docker Registry 이중화 설정 및  자원 할당
+registry:
+  # If true, the registry returns relative URLs in Location headers. The client is responsible for resolving the correct URL.
+  # LB 인증서 사용시 꼭 필요한 설정, 이 세팅 안하면 도커 인증시 권한에러 발생
+  relativeurls: true
+  replicas: 2
+  registry:
+    image:
+      tag: v2.1.0-nfs
+    resources:
+     limits:
+       memory: 8Gi
+       cpu: 1
+     requests:
+       memory: 8Gi
+       cpu: 1
+  controller:
+    resources:
+     limits:
+       memory: 1.6Gi
+       cpu: 0.2
+     requests:
+       memory: 1.6Gi
+       cpu: 0.2
+
+# 부가 컴포넌트 사용 안함 처리
+chartmuseum:
+  enabled: false
+
+trivy:
+  enabled: false
+
+notary:
+  enabled: false
+
+# Postgre Database 자원 할당 및 계정 세팅
+database:
+  internal:
+    password: "hlico123#"
+    resources:
+     limits:
+       memory: 8Gi
+       cpu: 1
+     requests:
+       memory: 8Gi
+       cpu: 1
+  external:
+    username: "admin"
+    password: "hlico123#"
+
+# Redis 자원 할당
+redis:
+  internal:
+    resources:
+     limits:
+       memory: 8Gi
+       cpu: 1
+     requests:
+       memory: 8Gi
+       cpu: 1

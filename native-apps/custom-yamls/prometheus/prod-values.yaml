@@ -1,0 +1,365 @@
+global:
+  rbac:
+    create: true
+    pspEnabled: true
+
+alertmanager:
+  enabled: false
+
+grafana:
+  enabled: false
+
+kubeProxy:
+  enabled: false
+
+kube-state-metrics:
+  # Harbor에서 가져올 이미지
+  image:
+    repository: imgreg.hanwhalife.com/plugin/prometheus/coreos-kube-state-metrics
+    tag: v1.9.7
+  # 자원 할당
+  resources:
+    limits:
+      cpu: 100m
+      memory: 800Mi
+    requests:
+      cpu: 100m
+      memory: 800Mi
+  # Plugin Node에 Pod가 스케줄링 되도록 설정
+  nodeSelector:
+    zone: plugin
+
+prometheus-node-exporter:
+  # Harbor에서 가져올 이미지
+  image:
+    repository: imgreg.hanwhalife.com/plugin/prometheus/node-exporter
+    tag: v1.0.1
+  # 자원 할당
+  resources:
+    limits:
+      cpu: 100m
+      memory: 800Mi
+    requests:
+      cpu: 100m
+      memory: 800Mi
+
+prometheusOperator:
+  # 로그레벨
+  logLevel: info
+  tlsProxy:
+    enabled: false
+  admissionWebhooks:
+    enabled: false
+  # 자원 할당
+  resources:
+    limits:
+      cpu: 200m
+      memory: 1600Mi
+    requests:
+      cpu: 200m
+      memory: 1600Mi
+  # Plugin Node에 Pod가 스케줄링 되도록 설정
+  nodeSelector:
+    zone: plugin
+  # Harbor에서 가져올 이미지
+  image:
+    repository: imgreg.hanwhalife.com/plugin/prometheus/coreos-prometheus-operator
+    tag: v0.38.1
+  configmapReloadImage:
+    repository: imgreg.hanwhalife.com/plugin/prometheus/jimmidyson-configmap-reload
+    tag: v0.3.0
+  prometheusConfigReloaderImage:
+    repository: imgreg.hanwhalife.com/plugin/prometheus/coreos-prometheus-config-reloader
+    tag: v0.38.1
+    sha: ""
+
+# Rancher에서 설치한 prometheus 설정을 가져옴
+nodeExporter:
+  serviceMonitor:
+    relabelings:
+    - action: replace
+      regex: (.+)
+      replacement: $1
+      sourceLabels:
+      - __meta_kubernetes_pod_host_ip
+      targetLabel: host_ip
+    - action: replace
+      regex: (.+)
+      replacement: $1
+      sourceLabels:
+      - __meta_kubernetes_pod_node_name
+      targetLabel: node
+
+# Rancher에서 설치한 prometheus 설정을 가져옴
+kubelet:
+  serviceMonitor:
+    cAdvisorMetricRelabelings:
+    - action: labeldrop
+      regex: (^id$|^image$|^name$|^cpu$)
+    - action: replace
+      regex: (.+)
+      replacement: $1
+      sourceLabels:
+      - container
+      targetLabel: container_name
+    - action: replace
+      regex: (.+)
+      replacement: $1
+      sourceLabels:
+      - pod
+      targetLabel: pod_name
+    cAdvisorRelabelings:
+    - action: replace
+      regex: (.+)
+      replacement: $1
+      sourceLabels:
+      - __meta_kubernetes_pod_host_ip
+      targetLabel: host_ip
+    - action: replace
+      regex: (.+)
+      replacement: $1
+      sourceLabels:
+      - __meta_kubernetes_pod_node_name
+      targetLabel: node
+
+prometheus:
+  prometheusSpec:
+  # Harbor에서 가져올 이미지
+    image:
+      repository: imgreg.hanwhalife.com/plugin/prometheus/prometheus
+      tag: v2.18.2
+  # 자원 할당
+    resources:
+      limits:
+        cpu: "6"
+        memory: 48Gi
+      requests:
+        cpu: "6"
+        memory: 48Gi
+    # 로그레벨
+    logLevel: info
+    # Plugin Node에 Pod가 스케줄링 되도록 설정
+    nodeSelector:
+      zone: plugin
+    # 최대 보관 주기
+    retention: "60d"
+    # 백업 가능
+    enableAdminAPI: true
+    # StorageClass 사용하여 BlockStorage 연결
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: plugin-sc
+          resources:
+            requests:
+              storage: 1T
+    # 백업용 NAS 연결
+    volumeMounts:
+    - mountPath: /backup
+      name: prometheus-snapshots
+    volumes:
+    - name: prometheus-snapshots
+      persistentVolumeClaim:
+        claimName: plugin-prometheus-pvc
+    additionalScrapeConfigs:
+    - job_name: 'prometheus-io-scrape'
+      kubernetes_sd_configs:
+      - role: pod
+        namespaces:
+          names:
+          - ingress-nginx
+          - ingress-controller
+          - kube-system
+      # kubewatcher 쿼리에서 사용하는 label로 변경 (수정시 kubewacther에서 안나오는 화면 생김)
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+        action: keep
+        regex: true
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scheme]
+        action: replace
+        target_label: __scheme__
+        regex: (https?)
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+        action: replace
+        target_label: __metrics_path__
+        regex: (.+)
+      - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+        action: replace
+        target_label: __address__
+        regex: ([^:]+)(?::\d+)?;(\d+)
+        replacement: $1:$2
+      - source_labels: [__meta_kubernetes_pod_node_name]
+        action: replace
+        target_label: node
+        regex: (.+)
+        replacement: $1
+      - source_labels: [__meta_kubernetes_namespace]
+        action: replace
+        target_label: namespace
+        regex: (.+)
+        replacement: $1
+      - source_labels: [__meta_kubernetes_pod_name]
+        action: replace
+        target_label: pod
+        regex: (.+)
+        replacement: $1
+      - source_labels: [__meta_kubernetes_pod_ip]
+        action: replace
+        target_label: pod_ip
+        regex: (.+)
+        replacement: $1
+      - source_labels: [__meta_kubernetes_pod_host_ip]
+        action: replace
+        target_label: host_ip
+        regex: (.+)
+        replacement: $1
+      - source_labels: [__meta_kubernetes_pod_controller_kind]
+        action: replace
+        target_label: created_by_kind
+        regex: (.+)
+        replacement: $1
+      - source_labels: [__meta_kubernetes_pod_controller_name]
+        action: replace
+        target_label: created_by_kind
+        regex: (.+)
+        replacement: $1
+    # kubewatcher 모니터링 타겟 대상으로 필요시 추가
+    - job_name: external-node-metrics
+      scrape_interval: 15s
+      scrape_timeout: 10s
+      metrics_path: /metrics
+      scheme: http
+      static_configs:
+      - targets: [10.253.48.21:9100, 10.253.48.22:9100]
+        labels:
+          zone: 'external'
+#    - job_name: process-metrics
+#      scrape_interval: 15s
+#      scrape_timeout: 10s
+#      metrics_path: /metrics
+#      scheme: http
+#      static_configs:
+#      - targets: [10.253.48.21:9256, 10.253.48.22:9256]
+#        labels:
+#          zone: 'external'
+#      - targets: [10.253.17.9:9256, 10.253.17.10:9256, 10.253.17.11:9256, 10.253.17.12:9256, 10.253.17.13:9256, 10.253.17.14:9256, 10.253.17.15:9256, 10.253.17.16:9256, 10.253.17.17:9256, 10.253.17.18:9256, 10.253.17.19:9256, 10.253.17.20:9256, 10.253.17.21:9256, 10.253.17.22:9256, 10.253.17.23:9256, 10.253.17.24:9256, 10.253.17.25:9256, 10.253.17.26:9256, 10.253.17.27:9256, 10.253.17.28:9256, 10.253.17.29:9256, 10.253.17.30:9256]
+#        labels:
+#          zone: 'cluster'
+    - job_name: oracle-metrics
+      scrape_interval: 39s
+      scrape_timeout: 38s
+      metrics_path: /metrics
+      scheme: http
+      static_configs:
+      - targets: [10.253.48.21:9162, 10.253.48.22:9162]
+        labels:
+          zone: 'external'
+          scrape_type: 'normal'
+    - job_name: 'jmx-metrics'
+      scrape_interval: 15s
+      kubernetes_sd_configs:
+        - role: pod
+          namespaces:
+            names:
+              - core-ns
+              - cust-ns
+              - pica-ns
+              - test-ns
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_container_port_number]
+        action: keep
+        regex: 9210
+      - source_labels: [__meta_kubernetes_namespace]
+        action: replace
+        target_label: namespace
+        regex: (.+)
+      - source_labels: [__meta_kubernetes_pod_container_name]
+        action: replace
+        target_label: application
+        regex: (.+)
+    - job_name: jmx-metrics-vm
+      scrape_interval: 15s
+      scrape_timeout: 10s
+      metrics_path: /metrics
+      scheme: http
+      static_configs:
+      - targets: [10.253.17.169:19200, 10.253.18.169:19200]
+        labels:
+          application: 'vmap-acs'
+          namespace: 'vmap-ns'
+      - targets: [10.253.17.151:19210, 10.253.18.151:19210]
+        labels:
+          application: 'vmap-act'
+          namespace: 'vmap-ns'
+      - targets: [10.253.17.161:19220, 10.253.18.161:19220]
+        labels:
+          application: 'vmap-bcm'
+          namespace: 'vmap-ns'
+      - targets: [10.253.17.161:19230, 10.253.18.161:19230]
+        labels:
+          application: 'vmap-bsm'
+          namespace: 'vmap-ns'
+      - targets: [10.253.17.202:19240, 10.253.18.202:19240]
+        labels:
+          application: 'vmap-ind'
+          namespace: 'vmap-ns'
+      - targets: [10.253.17.201:19250, 10.253.18.201:19250]
+        labels:
+          application: 'vmap-ini'
+          namespace: 'vmap-ns'
+      - targets: [10.253.17.201:19260, 10.253.18.201:19260]
+        labels:
+          application: 'vmap-inm'
+          namespace: 'vmap-ns'
+      - targets: [10.253.17.161:19270, 10.253.18.161:19270]
+        labels:
+          application: 'vmap-lsp'
+          namespace: 'vmap-ns'
+      - targets: [10.253.17.169:19280, 10.253.18.169:19280]
+        labels:
+          application: 'vmap-mgm'
+          namespace: 'vmap-ns'
+      - targets: [10.253.17.161:19290, 10.253.18.161:19290]
+        labels:
+          application: 'vmap-mkt'
+          namespace: 'vmap-ns'
+      - targets: [10.253.17.166:19300, 10.253.18.166:19300]
+        labels:
+          application: 'vmap-mnm'
+          namespace: 'vmap-ns'
+      - targets: [10.253.17.169:19310, 10.253.18.169:19310]
+        labels:
+          application: 'vmap-mrm'
+          namespace: 'vmap-ns'
+      - targets: [10.253.17.161:19320, 10.253.18.161:19320]
+        labels:
+          application: 'vmap-rsc'
+          namespace: 'vmap-ns'
+    - job_name: exa-node-metrics
+      scrape_interval: 15s
+      scrape_timeout: 10s
+      metrics_path: /metrics
+      scheme: http
+      static_configs:
+      - targets: [10.253.48.31:9100, 10.253.48.32:9100, 10.253.48.33:9100, 10.253.48.34:9100]
+        labels:
+          zone: 'external'
+#    - job_name: exa-process-metrics
+#      scrape_interval: 15s
+#      scrape_timeout: 10s
+#      metrics_path: /metrics
+#      scheme: http
+#      static_configs:
+#      - targets: [10.253.48.31:9256, 10.253.48.32:9256, 10.253.48.33:9256, 10.253.48.34:9256]
+#        labels:
+#          zone: 'external'
+    - job_name: exa-oracle-metrics
+      scrape_interval: 39s
+      scrape_timeout: 38s
+      metrics_path: /metrics
+      scheme: http
+      static_configs:
+      - targets: [10.253.48.31:9162, 10.253.48.32:9162, 10.253.48.33:9162, 10.253.48.34:9162]
+        labels:
+          zone: 'external'
+          scrape_type: 'normal'

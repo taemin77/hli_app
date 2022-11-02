@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: plugin-cassandra-pvc
+  namespace: cassandra
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 4T
+  storageClassName: ""
+  selector:
+    matchLabels:
+      pv: plugin-cassandra-pv

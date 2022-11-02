@@ -1,0 +1,37 @@
+# Cassandra 설정
+image:
+  # Harbor에서 가져올 이미지
+  registry: devimgreg.hanwhalife.com
+  repository: plugin/loki/cassandra
+  tag: 3.11.9
+  # 로그레벨
+  debug: false
+
+# 기본 3개 Pod 구성 필요
+replicaCount: 3
+
+# Plugin Node에 Pod 할당
+nodeSelector:
+   zone: plugin
+
+# 자원 할당
+resources:
+  limits:
+    cpu: 2
+    memory: 16Gi
+  requests:
+    cpu: 2
+    memory: 16Gi
+
+# NKS BlockStorage를 사용하기 위한 StorageClass 설정
+persistence:
+  enabled: true
+  storageClass: "dev-plugin-sc"
+  accessModes:
+    - ReadWriteOnce
+  size: 500Gi
+
+# loki에서 접속을 하기 위한 계정 생성
+dbUser:
+  user: loki
+  password: hlico123#

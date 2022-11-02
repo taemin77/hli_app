@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: plugin-prometheus-pv
+  labels:
+    pv: plugin-prometheus-pv
+spec:
+  capacity:
+    storage: 4T
+  accessModes:
+  - ReadWriteMany
+  nfs:
+    path: /n2589886_hlicomimgbackup/container/prometheus_log
+    server: 169.254.0.19

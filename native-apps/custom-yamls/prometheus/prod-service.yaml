@@ -1,0 +1,20 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: plugin-prometheus-svc
+  namespace: prometheus
+  annotations:
+    service.beta.kubernetes.io/ncloud-load-balancer-layer-type: nplb
+    service.beta.kubernetes.io/ncloud-load-balancer-internal: "true"
+    service.beta.kubernetes.io/ncloud-load-balancer-name: "plugin-prometheus-svc"
+    service.beta.kubernetes.io/ncloud-load-balancer-termination-protection: "true"
+spec:
+  ports:
+  - name: http
+    port: 9090
+    protocol: TCP
+    targetPort: 9090
+  selector:
+    app: prometheus
+    prometheus: prometheus-kube-prometheus-prometheus
+  type: LoadBalancer

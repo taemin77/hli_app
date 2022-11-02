@@ -1,0 +1,30 @@
+#테스트 프레임워크(최초 Grafana 기동체크)사용 안함
+testFramework:
+  enabled: false
+
+#로그레벨
+grafana.ini:
+  log:
+    level: info
+
+# 자원 할당
+resources:
+  limits:
+    cpu: 2
+    memory: 16Gi
+  requests:
+    cpu: 2
+    memory: 16Gi
+
+# NKS BlockStorage를 직접 생성해서 사용하기 위해 statefulset로 설치, 추후 이중화 필요시 NAS로 전화 필요
+persistence:
+  type: statefulset
+  enabled: true
+  storageClassName: devqa-devops-plugin-sc
+  accessModes:
+    - ReadWriteOnce
+  size: 100Gi
+
+# 최초 로그인 계정
+adminUser: admin
+adminPassword: hlico123#

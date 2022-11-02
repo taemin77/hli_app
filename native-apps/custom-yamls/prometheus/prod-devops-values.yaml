@@ -1,0 +1,120 @@
+global:
+  rbac:
+    create: true
+    pspEnabled: true
+
+alertmanager:
+  enabled: false
+
+grafana:
+  enabled: false
+
+kubeProxy:
+  enabled: false
+
+kube-state-metrics:
+  # 자원 할당
+  resources:
+    limits:
+      cpu: 100m
+      memory: 800Mi
+    requests:
+      cpu: 100m
+      memory: 800Mi
+
+
+prometheus-node-exporter:
+  # 자원 할당
+  resources:
+    limits:
+      cpu: 200m
+      memory: 1600Mi
+    requests:
+      cpu: 200m
+      memory: 1600Mi
+
+prometheusOperator:
+  # 로그레벨
+  logLevel: info
+  tlsProxy:
+    enabled: false
+  admissionWebhooks:
+    enabled: false
+  # 자원 할당
+  resources:
+    limits:
+      cpu: 200m
+      memory: 1600Mi
+    requests:
+      cpu: 200m
+      memory: 1600Mi
+
+# Rancher에서 설치한 prometheus 설정을 가져옴 (devops는 kubewatcher에서 사용하지 않지만, dev,qa,prod와 동일하게 적용
+nodeExporter:
+  serviceMonitor:
+    relabelings:
+    - action: replace
+      regex: (.+)
+      replacement: $1
+      sourceLabels:
+      - __meta_kubernetes_pod_host_ip
+      targetLabel: host_ip
+    - action: replace
+      regex: (.+)
+      replacement: $1
+      sourceLabels:
+      - __meta_kubernetes_pod_node_name
+      targetLabel: node
+
+# Rancher에서 설치한 prometheus 설정을 가져옴 (devops는 kubewatcher에서 사용하지 않지만, dev,qa,prod와 동일하게 적용
+kubelet:
+  serviceMonitor:
+    cAdvisorMetricRelabelings:
+    - action: labeldrop
+      regex: (^id$|^image$|^name$|^cpu$)
+    - action: replace
+      regex: (.+)
+      replacement: $1
+      sourceLabels:
+      - container
+      targetLabel: container_name
+    - action: replace
+      regex: (.+)
+      replacement: $1
+      sourceLabels:
+      - pod
+      targetLabel: pod_name
+    cAdvisorRelabelings:
+    - action: replace
+      regex: (.+)
+      replacement: $1
+      sourceLabels:
+      - __meta_kubernetes_pod_host_ip
+      targetLabel: host_ip
+    - action: replace
+      regex: (.+)
+      replacement: $1
+      sourceLabels:
+      - __meta_kubernetes_pod_node_name
+      targetLabel: node
+
+prometheus:
+  prometheusSpec:
+    resources:
+      limits:
+        cpu: "2"
+        memory: 16Gi
+      requests:
+        cpu: "2"
+        memory: 16Gi
+    # 최대 보관 주기
+    retention: "60d"
+    # 로그레벨
+    logLevel: info
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: devops-plugin-sc
+          resources:
+            requests:
+              storage: 200Gi

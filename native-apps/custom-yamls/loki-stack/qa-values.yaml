@@ -1,0 +1,154 @@
+# Loki 설정
+loki:
+  # Harbor에서 가져올 이미지
+  image:
+    repository: qaimgreg.hanwhalife.com/plugin/loki/loki
+
+  # Plugin Node에 Pod 할당
+  nodeSelector:
+    zone: plugin
+
+  # 자원 할당
+  resources:
+    limits:
+      cpu: 2
+      memory: 16Gi
+    requests:
+      cpu: 2
+      memory: 16Gi
+
+  # 로그레벨
+  extraArgs:
+    log.level: info
+
+  config:
+    # 쿼리 조회시 최대 50000만 건까지만 조회되도록 제한 (Default 5000, FA요구사항으로 늘림)
+    limits_config:
+      max_entries_limit_per_query: 50000
+
+    #  index, chunk 파일 저장 주기
+    schema_config:
+      configs:
+      - from: 2021-12-01
+        store: cassandra
+        object_store: cassandra
+        schema: v11
+        index:
+          prefix: index_
+          period: 360h
+        chunks:
+          prefix: chunk_
+          period: 360h
+
+    # Cassandra DB로 연결 설정
+    storage_config:
+      cassandra:
+        addresses: cassandra-0.cassandra-headless.cassandra,cassandra-1.cassandra-headless.cassandra,cassandra-2.cassandra-headless.cassandra
+        replication_factor: 3
+        port: 9042
+        disable_initial_host_lookup: true
+        keyspace: lokiindex
+        auth: true
+        username: loki
+        password: hlico123#
+
+    # 한번에 조회 가능한 쿼리 기간 60일 (2일로 할 경우 현재시간 기준 2일치만 조회됨, 2일 이전 데이터 조회불가)
+    chunk_store_config:
+      max_look_back_period: 1440h
+
+    # 최대 로그 저장 기간  60일로 설정
+    table_manager:
+      retention_deletes_enabled: true
+      retention_period: 1440h
+
+# Promtail 설정
+promtail:
+  # Harbor에서 가져올 이미지
+  image:
+    repository: qaimgreg.hanwhalife.com/plugin/loki/promtail
+
+  # 자원 할당
+  resources:
+    limits:
+      cpu: 0.5
+      memory: 4Gi
+    requests:
+      cpu: 0.5
+      memory: 4Gi
+
+  # 로그레벨
+  config:
+    server:
+      log_level: info
+
+  scrapeConfigs:
+    - job_name: kubernetes-pods-app
+      kubernetes_sd_configs:
+      - role: pod
+      # 업무 로그 포맷에 따라 데이터 추출
+      pipeline_stages:
+      - match:
+          selector: '{app=~"qa-test-.*|qa-core-.*|qa-cust-.*|qa-pica-.*"}'
+          stages:
+          - json:
+              expressions:
+                output: log
+                stream: stream
+          # FA에서 지정한 LogFormat이 변경될 시 수정필요
+          - regex:
+              expression: '.*(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}.\d{3}) (\S+)\s+(?P<level>\S+)\s+\[(?P<marker>\S+)\]\s+\[(\S+)\]\s+\[(?P<serviceId>\S+)\]\s+\[(\S+)\]\s+(\S+)\s+\[[ 0-9]+\] : (.+)\\n'
+          - labels:
+              level:
+              marker:
+              serviceId:
+          - output:
+              source: output
+      relabel_configs:
+      - source_labels:
+        - __meta_kubernetes_pod_label_app
+        target_label: __service__
+      # 불필요한 라벨링 제거 (안할경우 Grafana에 많은 라벨링들이 표시되서 지저분함)
+      - action: labeldrop
+        regex: __meta_kubernetes_pod_label_app_(.+)
+      - action: labeldrop
+        regex: __meta_kubernetes_pod_label_pod_(.+)
+      - action: labeldrop
+        regex: __meta_kubernetes_pod_label_k8s_(.+)
+      - action: labeldrop
+        regex: __meta_kubernetes_pod_label_controller(.+)
+      - action: labeldrop
+        regex: __meta_kubernetes_pod_label_chart
+      - action: labeldrop
+        regex: __meta_kubernetes_pod_label_statefulset(.+)
+      - action: labeldrop
+        regex: __meta_kubernetes_pod_label_release
+      - action: labeldrop
+        regex: __meta_kubernetes_pod_label_helm(.+)
+      - action: labeldrop
+        regex: __meta_kubernetes_pod_label_name
+      - action: labeldrop
+        regex: __meta_kubernetes_pod_label_prometheus
+      - action: labeldrop
+        regex: __meta_kubernetes_pod_label_component
+      - action: labeldrop
+        regex: __meta_kubernetes_pod_label_monitoring(.+)
+      - action: labeldrop
+        regex: __meta_kubernetes_pod_label_role(.+)
+      - action: labeldrop
+        regex: __meta_kubernetes_pod_label_heritage
+      - action: labelmap
+        regex: __meta_kubernetes_pod_label_(.+)
+      - action: replace
+        source_labels:
+        - __meta_kubernetes_pod_name
+        target_label: pod
+      - action: replace
+        source_labels:
+        - __meta_kubernetes_namespace
+        target_label: namespace
+      - replacement: /var/log/pods/*$1/*.log
+        separator: /
+        source_labels:
+        - __meta_kubernetes_pod_uid
+        - __meta_kubernetes_pod_container_name
+        target_label: __path__

@@ -1,0 +1,18 @@
+[Harbor Nas 세팅]
+
+1. NAS Volume 요청(2T) 및 할당
+ip: 169.254.0.19, path: /n2589886_hlicomdevharbor
+
+2. NAS에 연결
+[DevOps Node에서 workernode에서 NAS 연결]
+mkdir -p /root/mount/qa-harbor
+cd /root/mount/qa-harbor
+mount -t nfs -o sync 169.254.0.19:/n2589886_hlicomdevharbor /root/mount/qa-harbor/
+
+3. 폴더 생성 및 권한 변경
+mkdir registry
+chmod 777 registry
+chown 10000:10000 registry
+mkdir jobservice
+chmod 755 jobservice
+chown 10000:10000 jobservice
