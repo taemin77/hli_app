@@ -5,11 +5,11 @@ controller:
   service:
     type: ClusterIP
 
-  ingressClassByName: true
+  
   ingressClassResource:
     name: dev-nginx-mci
-  ingressClass: dev-nginx-mci
-  
+    controllerValue: "k8s.io/dev-nginx-mci"
+    
 #  image:
     # Harbor에서 가져올 이미지
  #   registry: imgreg.heungkuklife.com
