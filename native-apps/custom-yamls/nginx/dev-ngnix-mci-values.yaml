@@ -7,71 +7,46 @@ controller:
 
   image:
     # Harbor에서 가져올 이미지
-    registry: devimgreg.hanwhalife.com
-    image: plugin/nginx/ingress-nginx-controller
-    tag: "v0.47.0"
-    digest: ""
+ #   registry: imgreg.heungkuklife.com
+ #   image: nativeapp/nginx/ingress-nginx/controller
+ #   tag: "v1.4.0"
+ #   digest: ""
 
-  replicaCount: 2
+  replicaCount: 1
 
-  nodeSelector:
-    zone: plugin
+#  nodeSelector:
+#    zone: coreapp
 
   # 자원 할당
   resources:
     limits:
-      cpu: 2
-      memory: 16Gi
+      cpu: 1
+      memory: 4Gi
     requests:
-      cpu: 2
-      memory: 16Gi
+      cpu: 1
+      memory: 4Gi
 
   config:
     ssl-redirect: "false"
-    # 로그
-    error-log-level: "notice" #emerg > alert > crit > error > warn > notice > info > debug
-    #log-format-upstream: '[$time_local] [$host]$remote_addr - [$hostname]$server_addr Sta[$status] Dur[$request_time] - [$service_name][pod]$upstream_addr $request $content_type Sta[$upstream_status] Dur[$upstream_response_time] ReqLen[$request_length] ResLen[$upstream_response_length]'
-    #log-format-upstream: '{"content_type": "$content_type", "service_name": "$service_name", "server_addr": "$server_addr", "hostname": "$hostname", "host": "$host", "msec": "$msec", "connection": "$connection", "connection_requests": "$connection_requests", "pid": "$pid", "request_id": "$request_id", "request_length": "$request_length", "remote_addr": "$remote_addr", "remote_user": "$remote_user", "remote_port": "$remote_port","time_local": "$time_local", "request": "$request", "request_uri": "$request_uri", "status": "$status", "body_bytes_sent": "$body_bytes_sent", "bytes_sent": "$bytes_sent", "http_referer": "$http_referer", "http_user_agent": "$http_user_agent", "http_host": "$http_host", "server_name": "$server_name", "request_time": "$request_time", "upstream": "$upstream_addr", "upstream_connect_time": "$upstream_connect_time", "upstream_header_time": "$upstream_header_time", "upstream_response_time": "$upstream_response_time", "upstream_response_length": "$upstream_response_length", "scheme": "$scheme", "upstream_status": "$upstream_status", "request_method": "$request_method", "server_protocol": "$server_protocol"}'
-    log-format-upstream: 'content_type[$content_type], service_name[$service_name], server_addr[$server_addr], hostname[$hostname], host[$host], msec[$msec], connection[$connection], connection_requests[$connection_requests], pid[$pid], request_id[$request_id], request_length[$request_length], remote_addr[$remote_addr], remote_user[$remote_user], remote_port[$remote_port], time_local[$time_local], request[$request], request_uri[$request_uri], status[$status], body_bytes_sent[$body_bytes_sent], bytes_sent[$bytes_sent], http_referer[$http_referer], http_user_agent[$http_user_agent], http_host[$http_host], server_name[$server_name], request_time[$request_time], upstream_addr[$upstream_addr], upstream_connect_time[$upstream_connect_time], upstream_header_time[$upstream_header_time], upstream_response_time[$upstream_response_time], upstream_response_length[$upstream_response_length], scheme[$scheme], upstream_status[$upstream_status], request_method[$request_method], server_protocol[$server_protocol]'
-
-    # Http Header에 언더스코어(_) 허용 (Pica 커스텀 헤더 사용 협의사항)
-    enable-underscores-in-headers: "true"
-    proxy-set-headers: "ingress-nginx/custom-headers"
+    # 로그 (emerg > alert > crit > error > warn > notice > info > debug)
+    error-log-level: "notice"
+    # 로그 포맷
+    log-format-upstream: '[$time_local] [$host]$remote_addr - [$hostname]$server_addr Sta[$status] Dur[$request_time] - [$service_name][pod]$upstream_addr $request $content_type Sta[$upstream_status] Dur[$upstream_response_time] ReqLen[$request_length] ResLen[$upstream_response_length]'
     # Pod의 Response 평균치를 기준으로 부하 분산
     load-balance: "ewma"
     # 사이즈 제한 (Com 업무단 협의사항)
     proxy-body-size: 50m
     # 트래픽 제한 (mci,fa 업무단 협의사항)
     proxy-read-timeout: "600"
-    proxy-connect-timeout: "600"
+ #   proxy-connect-timeout: "600"
     proxy-send-timeout: "600"
     # a client request body is buffered to a temporary file 발생시 설정
     client-body-buffer-size: "1m"  # Default 8k
-
-    # MCI Connection 끊김
-    keep-alive: "750"  # Default 75
-    keep-alive-requests: "1000"  # Default 100
-
-    # 파프리카 Connection 끊김
-    proxy-buffers-number: "100" # Default 10
-    client-body-timeout: "600"  # Default 60
-    upstream-keepalive-connections: "5000"  # Default 100
-    upstream-keepalive-requests: "50000"  # Default 5000
-    upstream-keepalive-timeout: "600"  # Default 60
-
-    # proxy 설정 변경 (esb) -> 효과없었음
-    proxy-buffer-size: "64k"  # Default 8k
-    proxy-max-temp-file-size: "8192m"  # Default 1024m
-    proxy-next-upstream-timeout: "10" # Default 0
-    global-rate-limit-memcached-connect-timeout: 5000 # Default 50 (ms)
-    global-rate-limit-memcached-max-idle-timeout: 100000 # Default 10000 (ms)
-    global-rate-limit-memcached-pool-size: 500 # Default 50
 
   # Log Write 타임존 설정
   extraEnvs:
     - name: TZ
       value: Asia/Seoul
 
-# 자체 PSP사용
-podSecurityPolicy:
-  enabled: true
+  service:
+    enabled: false
