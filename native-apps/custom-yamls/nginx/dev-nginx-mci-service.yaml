@@ -2,7 +2,7 @@ kind: Service
 apiVersion: v1
 metadata:
   name: dev-nginx-mci
-  namespace: dev-ingress
+  namespace: dev-nginx
   annotations:
     service.beta.kubernetes.io/ncloud-load-balancer-layer-type: nlb
     service.beta.kubernetes.io/ncloud-load-balancer-internal: "true"
