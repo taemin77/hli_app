@@ -22,11 +22,14 @@ fi
 # k8s리소스조회
 if [ ${DEPLOY_OPTION} == "resource-list" ]; then
     kubectl get -o wide -f ./native-apps/custom-yamls/${NATIVEAPP_NAME}/${PROFILE}-${NATIVEAPP_NAME}-namespace.yaml --kubeconfig ~/.kube/${PROFILE}-config
+    kubectl get -o wide -f ./native-apps/custom-yamls/${NATIVEAPP_NAME}/${PROFILE}-${NATIVEAPP_NAME}-ingressclass.yaml --kubeconfig ~/.kube/${PROFILE}-config
     kubectl get -o wide -f ./native-apps/custom-yamls/${NATIVEAPP_NAME}/${FULL_NAME}-service.yaml --kubeconfig ~/.kube/${PROFILE}-config
+    
 fi
 
 # k8s리소스배포
 if [ ${DEPLOY_OPTION} == "resource-deploy" ]; then
     kubectl apply -f ./native-apps/custom-yamls/${NATIVEAPP_NAME}/${PROFILE}-${NATIVEAPP_NAME}-namespace.yaml --kubeconfig ~/.kube/${PROFILE}-config
+    kubectl apply -f ./native-apps/custom-yamls/${NATIVEAPP_NAME}/${PROFILE}-${NATIVEAPP_NAME}-ingressclass.yaml --kubeconfig ~/.kube/${PROFILE}-config
     kubectl apply -f ./native-apps/custom-yamls/${NATIVEAPP_NAME}/${FULL_NAME}-service.yaml --kubeconfig ~/.kube/${PROFILE}-config
 fi

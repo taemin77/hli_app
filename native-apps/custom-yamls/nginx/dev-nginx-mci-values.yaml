@@ -5,7 +5,6 @@ controller:
   service:
     type: ClusterIP
 
-  
   ingressClassResource:
     enabled: false
     controllerValue: "nginx.org/ingress-controller"
