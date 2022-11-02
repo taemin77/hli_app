@@ -5,10 +5,9 @@ controller:
   service:
     type: ClusterIP
 
-
   ingressClassResource:
-    name: dev-nginx-fep
-    controllerValue: "k8s.io/dev-nginx-fep"
+    enabled: false
+    controllerValue: "nginx.org/ingress-controller"
     
 #  image:
     # Harbor에서 가져올 이미지

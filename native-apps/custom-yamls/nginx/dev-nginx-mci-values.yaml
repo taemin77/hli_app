@@ -7,8 +7,8 @@ controller:
 
   
   ingressClassResource:
-    name: dev-nginx-mci
-    controllerValue: "k8s.io/dev-nginx-mci"
+    enabled: false
+    controllerValue: "nginx.org/ingress-controller"
     
 #  image:
     # Harbor에서 가져올 이미지
