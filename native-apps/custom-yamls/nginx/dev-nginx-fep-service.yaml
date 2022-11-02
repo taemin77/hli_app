@@ -1,18 +1,18 @@
 kind: Service
 apiVersion: v1
 metadata:
-  name: dev-nginx-mci
+  name: dev-nginx-fep
   namespace: dev-nginx
   annotations:
     service.beta.kubernetes.io/ncloud-load-balancer-layer-type: nlb
     service.beta.kubernetes.io/ncloud-load-balancer-internal: "true"
-    service.beta.kubernetes.io/ncloud-load-balancer-name: "dev-nginx-mci"
+    service.beta.kubernetes.io/ncloud-load-balancer-name: "dev-nginx-fep"
     service.beta.kubernetes.io/ncloud-load-balancer-termination-protection: "true"
 spec:
   type: LoadBalancer
   selector:
     app.kubernetes.io/component: controller
-    app.kubernetes.io/instance: dev-nginx-mci
+    app.kubernetes.io/instance: dev-nginx-fep
     app.kubernetes.io/name: ingress-nginx
   ports:
     - name: http

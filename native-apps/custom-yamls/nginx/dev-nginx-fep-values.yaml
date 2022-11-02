@@ -6,7 +6,7 @@ controller:
     type: ClusterIP
 
   ingressClassResource:
-    name: dev-nginx-fep
+    name: dev-nginx-mci
   
 #  image:
     # Harbor에서 가져올 이미지
