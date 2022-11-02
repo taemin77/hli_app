@@ -11,7 +11,7 @@ fi
 
 # helm패키지배포
 if [ ${DEPLOY_OPTION} == "helm-deploy" ]; then
-    helm upgrade --install --kubeconfig ~/.kube/${PROFILE}-config ${FULL_NAME} ./helm-packages/${NATIVEAPP_NAME}/ -n ${PROFILE}-${NATIVEAPP_NAME} -f ./custom-yamls/${NATIVEAPP_NAME}/${FULL_NAME}-values.yaml
+    helm upgrade --install --kubeconfig ~/.kube/${PROFILE}-config ${FULL_NAME} ./native-apps/helm-packages/${NATIVEAPP_NAME}/ -n ${PROFILE}-${NATIVEAPP_NAME} -f ./native-apps/custom-yamls/${NATIVEAPP_NAME}/${FULL_NAME}-values.yaml
 fi
 
 # helm패키지삭제
@@ -21,12 +21,12 @@ fi
 
 # k8s리소스조회
 if [ ${DEPLOY_OPTION} == "resource-list" ]; then
-    kubectl get -f ./custom-yamls/${NATIVEAPP_NAME}/${PROFILE}-${NATIVEAPP_NAME}-namespace.yaml --kubeconfig ~/.kube/${PROFILE}-config
-    kubectl get -f ./custom-yamls/${NATIVEAPP_NAME}/${FULL_NAME}-service.yaml --kubeconfig ~/.kube/${PROFILE}-config
+    kubectl get -f ./native-apps/custom-yamls/${NATIVEAPP_NAME}/${PROFILE}-${NATIVEAPP_NAME}-namespace.yaml --kubeconfig ~/.kube/${PROFILE}-config
+    kubectl get -f ./native-apps/custom-yamls/${NATIVEAPP_NAME}/${FULL_NAME}-service.yaml --kubeconfig ~/.kube/${PROFILE}-config
 fi
 
 # k8s리소스배포
 if [ ${DEPLOY_OPTION} == "resource-deploy" ]; then
-    kubectl apply -f ./custom-yamls/${NATIVEAPP_NAME}/${PROFILE}-${NATIVEAPP_NAME}-namespace.yaml --kubeconfig ~/.kube/${PROFILE}-config
-    kubectl apply -f ./custom-yamls/${NATIVEAPP_NAME}/${FULL_NAME}-service.yaml --kubeconfig ~/.kube/${PROFILE}-config
+    kubectl apply -f ./native-apps/custom-yamls/${NATIVEAPP_NAME}/${PROFILE}-${NATIVEAPP_NAME}-namespace.yaml --kubeconfig ~/.kube/${PROFILE}-config
+    kubectl apply -f ./native-apps/custom-yamls/${NATIVEAPP_NAME}/${FULL_NAME}-service.yaml --kubeconfig ~/.kube/${PROFILE}-config
 fi
