@@ -1,16 +1,15 @@
 kind: Service
 apiVersion: v1
 metadata:
-  name: dev-mci-nginx
+  name: dev-nginx-mci
   namespace: dev-ingress
   annotations:
     service.beta.kubernetes.io/ncloud-load-balancer-layer-type: nlb
     service.beta.kubernetes.io/ncloud-load-balancer-internal: "true"
-    service.beta.kubernetes.io/ncloud-load-balancer-name: "dev-plugin-nginx-svc"
+    service.beta.kubernetes.io/ncloud-load-balancer-name: "dev-nginx-mci"
     service.beta.kubernetes.io/ncloud-load-balancer-termination-protection: "true"
 spec:
   type: LoadBalancer
-  externalTrafficPolicy: Cluster
   selector:
     app.kubernetes.io/component: controller
     app.kubernetes.io/instance: ingress-nginx
